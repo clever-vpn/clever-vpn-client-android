@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Clever VPN</string>
+    <string name="permission_description">control Clever VPN tunnels, enabling and disabling tunnels at will, potentially misdirecting Internet traffic</string>
+    <string name="permission_label">control Clever VPN tunnels</string>
+</resources>
