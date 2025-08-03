@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Clever VPN</string>
+    <string name="permission_label">Create Clever VPN tunnels</string>
+    <string name="activation_key">激活码</string>
+    <string name="activate">激活</string>
+    <string name="downloaded">下载</string>
+    <string name="uploaded">上传</string>
+    <string name="settings">设置</string>
+    <string name="deactivate">撤销激活</string>
+    <string name="protocol_type">协议类型</string>
+    <string name="logs">日志</string>
+    <string name="view_logs">日志详情</string>
+    <string name="about_us">关于我们</string>
+    <string name="version">版本号</string>
+    <string name="permission_description">"Allows Clever VPN to create a VPN connection to protect your online privacy and secure your network traffic. "</string>
+</resources>

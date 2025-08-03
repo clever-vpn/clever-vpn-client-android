@@ -1,7 +1,6 @@
 package com.clevervpn.app.ui.screen
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -31,21 +29,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.clevervpn.kit.common.ProtocolType
-import com.clevervpn.kit.common.UserInfo
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import com.clevervpn.app.R
+import com.clevervpn.kit.common.ProtocolType
+import com.clevervpn.kit.common.UserInfo
 
 
 @Preview
@@ -111,7 +111,8 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            CardSettingItem(title = "Activation Key") {
+//            CardSettingItem(title = "Activation Key") {
+            CardSettingItem(title = stringResource(R.string.activation_key)) {
                 Column {
                     Text(text = userInfo.key.chunked(4).joinToString("-"))
                     Button(onClick = {
@@ -136,7 +137,7 @@ fun SettingsScreen(
 
                 }
             }
-            CardSettingItem(title = "Protocol Type") {
+            CardSettingItem(title = stringResource(R.string.protocol_type)) {
                 val protocols = arrayOf(
                     ProtocolType.AUTO,
                     ProtocolType.UDP,
@@ -191,13 +192,13 @@ fun SettingsScreen(
                     }
                 }
             }
-            CardSettingItem(title = "Logs") {
+            CardSettingItem(title = stringResource(R.string.logs)) {
                 Button(onClick = onLogs) {
-                    Text(text = "View Logs")
+                    Text(text = stringResource(R.string.view_logs))
                 }
             }
             if (userInfo.url != null) {
-                CardSettingItem(title = "About us") {
+                CardSettingItem(title = stringResource(R.string.about_us)) {
                     Text(
                         text = "${userInfo.url} ",
                         modifier = Modifier
@@ -212,7 +213,7 @@ fun SettingsScreen(
                 }
             }
 
-            CardSettingItem(title = "Version") {
+            CardSettingItem(title = stringResource(R.string.version)) {
                     Text(text = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown")
             }
         }

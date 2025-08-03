@@ -14,7 +14,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -26,7 +25,6 @@ import com.clevervpn.app.ui.theme.CleverVPNTheme
 import com.clevervpn.app.ui.viewmodels.VpnViewModel
 import com.google.accompanist.adaptive.calculateDisplayFeatures
 import kotlinx.coroutines.launch
-import com.clevervpn.app.ui.screen.UiTest
 
 class MainActivity : ComponentActivity() {
     private val vm: VpnViewModel by viewModels()
@@ -43,7 +41,7 @@ class MainActivity : ComponentActivity() {
                     // A surface container using the 'background' color from the theme
                     val snackbarHostState = remember { SnackbarHostState() }
                     val scope = rememberCoroutineScope()
-                    val displayFeatures = calculateDisplayFeatures(activity = this)
+//                    val displayFeatures = calculateDisplayFeatures(activity = this)
 
                     val showSnackBar: (msg: String) -> Unit = { msg ->
                         scope.launch {

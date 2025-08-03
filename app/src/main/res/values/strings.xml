@@ -1,5 +1,16 @@
 <resources>
     <string name="app_name">Clever VPN</string>
-    <string name="permission_description">control Clever VPN tunnels, enabling and disabling tunnels at will, potentially misdirecting Internet traffic</string>
-    <string name="permission_label">control Clever VPN tunnels</string>
+    <string name="permission_description">"Allows Clever VPN to create a VPN connection to protect your online privacy and secure your network traffic. "</string>
+    <string name="permission_label">Create Clever VPN tunnels</string>
+    <string name="activation_key">Activation Key</string>
+    <string name="activate">Activate</string>
+    <string name="downloaded">DOWNDLOADED</string>
+    <string name="uploaded">UPLOADED</string>
+    <string name="settings">Settings</string>
+    <string name="deactivate">DeActivate</string>
+    <string name="protocol_type">Protocol Type</string>
+    <string name="logs">Logs</string>
+    <string name="view_logs">View Logs</string>
+    <string name="about_us">About Us</string>
+    <string name="version">Version</string>
 </resources>

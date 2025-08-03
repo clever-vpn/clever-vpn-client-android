@@ -1,3 +1,7 @@
+
+val pkg: String = providers.gradleProperty("clevervpnPackageName").get()
+val ns: String = providers.gradleProperty("clevervpnSpacename").get()
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,15 +9,15 @@ plugins {
 }
 
 android {
-    namespace = "com.clevervpn.app"
+    namespace = ns
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.clevervpn.app"
+        applicationId = pkg
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.3.0"
+        versionCode = providers.gradleProperty("clevervpnVersionCode").get().toInt()
+        versionName = providers.gradleProperty("clevervpnVersionName").get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -72,8 +76,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation(project(":kit"))
-//    implementation("net.clever-vpn:clever-vpn-android-kit:1.0.2025008")
+//    implementation(project(":kit"))
+    implementation("net.clever-vpn:clever-vpn-android-kit:1.0.20250803")
     coreLibraryDesugaring(libs.desugarJdkLibs)
     implementation(libs.camera.core)
     implementation(libs.camera.lifecycle)

@@ -23,9 +23,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.clevervpn.app.R
 import com.clevervpn.app.utils.prettyBytes
 import com.clevervpn.kit.common.Traffic
 import kotlinx.coroutines.Dispatchers
@@ -70,9 +72,9 @@ fun StatsCard(getTraffic: suspend () -> Traffic?) {
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        Stats(prettyBytes((traffic?.rx ?: 0L).toULong()), "DOWNLOADED", isDownload = true)
+        Stats(prettyBytes((traffic?.rx ?: 0L).toULong()), stringResource(R.string.downloaded), isDownload = true)
         VerticalDivider(modifier = Modifier.padding(vertical = 15.dp))
-        Stats(prettyBytes((traffic?.tx ?: 0L).toULong()), "UPLOADED")
+        Stats(prettyBytes((traffic?.tx ?: 0L).toULong()), stringResource(R.string.uploaded))
     }
 
 
