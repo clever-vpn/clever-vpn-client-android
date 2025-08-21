@@ -77,7 +77,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 //    implementation(project(":kit"))
-    implementation("net.clever-vpn:clever-vpn-android-kit:1.0.20250803")
+    implementation("net.clever-vpn:clever-vpn-android-kit:1.0.20250821")
     coreLibraryDesugaring(libs.desugarJdkLibs)
     implementation(libs.camera.core)
     implementation(libs.camera.lifecycle)
