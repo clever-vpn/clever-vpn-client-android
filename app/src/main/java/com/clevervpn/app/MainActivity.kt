@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        Utils.init(this)
-        vm.bindActivity(this)
+        // vm.bindActivity(this)
         enableEdgeToEdge()
         setContent {
             CleverVPNTheme {

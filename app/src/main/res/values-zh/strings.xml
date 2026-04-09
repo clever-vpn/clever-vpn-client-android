@@ -1,17 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Clever VPN</string>
-    <string name="permission_label">Create Clever VPN tunnels</string>
+    <string name="permission_label">创建 Clever VPN 隧道</string>
+    <string name="permission_description">允许 Clever VPN 创建 VPN 连接，以保护您的在线隐私并保障网络流量安全。</string>
+
     <string name="activation_key">激活码</string>
     <string name="activate">激活</string>
+    <string name="activation_key_copied">激活码已复制</string>
+    <string name="copy_activation_key">复制激活码</string>
+    <string name="copied">已复制</string>
+
     <string name="downloaded">下载</string>
     <string name="uploaded">上传</string>
+
     <string name="settings">设置</string>
     <string name="deactivate">撤销激活</string>
+    <string name="deactivate_confirm_message">确定要撤销激活吗？</string>
     <string name="protocol_type">协议类型</string>
+    <string name="protocol_desc_auto">自动选择协议（默认）</string>
+    <string name="protocol_desc_udp_tunnel">UDP 隧道模式</string>
+    <string name="protocol_desc_udp_fast">UDP 极速模式</string>
+    <string name="protocol_desc_udp_stable">UDP 稳定模式</string>
+    <string name="protocol_desc_tcp_fast">TCP 极速模式</string>
+    <string name="protocol_desc_tcp_stable">TCP 稳定模式</string>
+
+    <string name="split_info">分流信息</string>
+    <string name="split_rules">分流规则</string>
+    <string name="split_settings_title">分流设置</string>
+    <string name="split_region">区域</string>
+    <string name="split_current_code">当前区域码：%1$s</string>
+    <string name="refresh_region_code">刷新区域码</string>
+    <string name="split_ip">IP</string>
+    <string name="split_ip_label">IP/CIDR（每行一个）</string>
+    <string name="split_ip_placeholder">例如：192.168.1.0/24</string>
+    <string name="split_domain">域名</string>
+    <string name="split_domain_label">域名/后缀（每行一个）</string>
+    <string name="split_domain_placeholder">例如：google.com\n.example.com\n（前缀 \'\.\' 表示后缀）</string>
+    <string name="split_advanced_regex">高级（正则）</string>
+    <string name="split_regex_label">正则表达式（每行一个）</string>
+    <string name="split_regex_placeholder">例如：^.*\\.example\\.com$</string>
+
     <string name="logs">日志</string>
     <string name="view_logs">日志详情</string>
+    <string name="save_log">保存日志</string>
+    <string name="log_save_success">保存成功！\n文件路径：%1$s</string>
+    <string name="log_save_failed">保存失败：%1$s</string>
+    <string name="user_cancelled_action">用户取消操作</string>
+
+    <string name="connection_info">连接信息</string>
+    <string name="connection_protocol">协议：%1$s</string>
+    <string name="connection_relay">中继：%1$s</string>
+    <string name="connection_upstream">上游：%1$s</string>
+
     <string name="about_us">关于我们</string>
     <string name="version">版本号</string>
-    <string name="permission_description">"Allows Clever VPN to create a VPN connection to protect your online privacy and secure your network traffic. "</string>
+
+    <string name="vpn_error_title">VPN 错误</string>
+    <string name="vpn_connected_desc">VPN 已连接</string>
+    <string name="vpn_disconnected_desc">VPN 未连接</string>
+    <string name="vpn_permission_title">VPN 权限</string>
+    <string name="vpn_permission_message">连接前需要系统确认 VPN 权限。</string>
+    <string name="notification_permission_title">通知权限</string>
+    <string name="notification_permission_message">为了显示 VPN 运行状态，建议允许通知权限。此提示只会出现一次。</string>
+
+    <string name="ok">确定</string>
+    <string name="cancel">取消</string>
+    <string name="continue_label">继续</string>
+    <string name="go_authorize">去授权</string>
+    <string name="later">稍后</string>
+    <string name="go_back">返回</string>
+    <string name="checked">已选中</string>
+    <string name="open">打开</string>
+    <string name="warning">警告</string>
+    <string name="none_text">无</string>
+    <string name="refresh">刷新</string>
+    <string name="expand">展开</string>
+    <string name="collapse">收起</string>
+
+    <string name="logo_content_description">Clever VPN 标志</string>
+    <string name="tagline_fast_modern_vpn">快速现代 VPN</string>
+    <string name="scan_qr_code">扫描二维码</string>
+    <string name="scan_qr_code_now">现在扫描二维码！</string>
+    <string name="no_camera_permission">没有相机权限！</string>
+
+    <string name="privacy_sheet_agree">同意将设备数据关联到你的账号！</string>
+    <string name="privacy_sheet_details">为了让应用与 Clever VPN 服务及应用内购买正常工作，以下设备数据会与您的账号关联：\n\n- 随机唯一设备 ID\n- 设备名称或主机名\n- 操作系统版本与类型\n- CPU 架构\n- 激活码\n\nClever VPN 重视您的隐私。您可随时通过撤销激活退出此设备并删除数据。</string>
+
+    <string name="no_line">未选择线路</string>
+    <string name="edit_line">编辑线路</string>
+    <string name="lines">线路</string>
+    <string name="traffic_factor">流量系数</string>
+    <string name="relay">中继</string>
+    <string name="upstream">上游</string>
+    <string name="relay_enabled">已启用中继</string>
+    <string name="upstream_enabled">已启用上游</string>
 </resources>

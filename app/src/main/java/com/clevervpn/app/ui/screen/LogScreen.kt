@@ -20,16 +20,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.clevervpn.app.R
+import com.clevervpn.app.ui.common.AnsiColorUtils
 import com.clevervpn.kit.common.LogLine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,11 +38,20 @@ import kotlinx.coroutines.launch
 @Composable
 fun LogScreen(
     logList: List<LogLine>,
+    onSubscribeLogs: () -> Unit,
+    onUnsubscribeLogs: () -> Unit,
     onBack: () -> Unit,
     showSnackBar: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val listState = rememberLazyListState()
+
+    DisposableEffect(Unit) {
+        onSubscribeLogs()
+        onDispose {
+            onUnsubscribeLogs()
+        }
+    }
 
     LaunchedEffect(logList) {
         if (logList.isNotEmpty()) {
@@ -61,15 +69,15 @@ fun LogScreen(
                 try {
                     // 写入文件内容
                     context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                        outputStream.write(logList.joinToString("\n") { "${it.time} [${it.tag}] ${it.msg}" }.toByteArray())
+                        outputStream.write(logList.joinToString("\n") { "[L${it.level}] ${it.message}" }.toByteArray())
                     }
-                    showSnackBar("保存成功！\n文件路径: ${uri.path}")
+                    showSnackBar(context.getString(R.string.log_save_success, uri.path ?: ""))
                 } catch (e: Exception) {
-                    showSnackBar("保存失败: ${e.localizedMessage}")
+                    showSnackBar(context.getString(R.string.log_save_failed, e.localizedMessage ?: ""))
                 }
             }
         } else {
-            showSnackBar("用户取消操作")
+            showSnackBar(context.getString(R.string.user_cancelled_action))
         }
     }
 
@@ -82,7 +90,7 @@ fun LogScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go Back"
+                            contentDescription = stringResource(R.string.go_back)
                         )
                     }
                 },
@@ -94,7 +102,7 @@ fun LogScreen(
                     }) {
                         Icon(
                             imageVector = Icons.Default.Save,
-                            contentDescription = "save log"
+                            contentDescription = stringResource(R.string.save_log)
                         )
                     }
                 }
@@ -122,32 +130,7 @@ fun LogScreen(
                             .padding(vertical = 2.dp)
                     ) {
                         Text(
-                            text = logLine.time.toString(),
-                            modifier = Modifier.weight(1f),
-                            color = Color.Gray
-                        )
-
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp)
-                    ) {
-                        //请用AnnotatedString将两个Text合并到一个Text中
-                        Text(
-                            text = buildAnnotatedString {
-                                withStyle(style= SpanStyle(color = when(logLine.level) {
-                                    "V", "D" -> Color.Gray
-                                    "E" -> Color.Red
-                                    "I" -> Color.Green
-                                    "W" -> Color.Yellow
-                                    else -> Color.Black
-                                }, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                                ) {
-                                    append(logLine.tag)
-                                }
-                                append(" [${logLine.msg}]")
-                            }
+                            text = AnsiColorUtils.ansiToAnnotatedString(logLine.message)
                         )
                     }
                     HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.2f))

@@ -13,65 +13,46 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.clevervpn.app.ui.viewmodels.VpnViewModel
-import com.clevervpn.kit.VpnClient
-import com.clevervpn.kit.common.LogLine
-import com.clevervpn.kit.common.ProtocolType
-import java.util.Date
+import com.clevervpn.kit.common.Protocol
 import android.util.Log
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.withContext
 
 
 @Composable
 fun UiTest(vm: VpnViewModel) {
     val userInfo = vm.userInfoState.collectAsState()
-//    val isActivated by  remember { derivedStateOf { userInfo.value != null } }
-    val isActivated by vm.activatedState.collectAsState()
-    val context = LocalContext.current
+    val logs by vm.logState.collectAsState()
     var keyInput by remember { mutableStateOf("") }
     val scrollState = rememberLazyListState()
-//    val logs = remember {
-//            mutableStateListOf<LogLine>(LogLine(1,1, Date(), "1234567890", "xxxx", "dddd"))
-//    }
-//    LaunchedEffect(Unit) {
-//            VpnClient.instance.getLogEntries().flowOn(Dispatchers.IO).collect {
-//                withContext(Dispatchers.Main) {
-//                    it.forEach { x ->
-//
-//                        logs.add(x)
-//
-//                    }
-//                }
-//            }
-//    }
+
+    DisposableEffect(Unit) {
+        vm.subscribeLogs()
+        onDispose {
+            vm.unsubscribeLogs()
+        }
+    }
 
     Column {
-        ProtocolType.entries.forEach { protocol ->
+        Protocol.entries.forEach { protocol ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().clickable {
@@ -135,14 +116,14 @@ fun UiTest(vm: VpnViewModel) {
             verticalArrangement = Arrangement.Top
         ) {
 
-            items(vm.logs) {
+            items(logs) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 2.dp)
                 ) {
                     Text(
-                    text = it.time.toString(),
+                    text = "L${it.level}",
                     modifier = Modifier.weight(1f),
                     color = Color.Gray
                         )
@@ -153,19 +134,18 @@ fun UiTest(vm: VpnViewModel) {
                         .fillMaxWidth()
                         .padding(vertical = 2.dp)
                 ) {
-                    //请用AnnotatedString将两个Text合并到一个Text中
                     Text(
                         text = buildAnnotatedString {
                             withStyle(style= SpanStyle(color = when(it.level) {
-                                "V", "D" -> Color.Gray
-                                "E" -> Color.Red
-                                "I" -> Color.Green
-                                "W" -> Color.Yellow
+                                0, 1 -> Color.Gray
+                                2 -> Color.Green
+                                3 -> Color.Yellow
+                                4, 5 -> Color.Red
                                 else -> Color.Black
                             }, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)) {
-                                append(it.tag)
+                                append("Level ${it.level}")
                             }
-                            append(" [${it.msg}]")
+                            append(" [${it.message}]")
                         }
                     )
                 }

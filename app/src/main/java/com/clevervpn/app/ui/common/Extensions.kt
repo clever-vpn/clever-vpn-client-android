@@ -1,19 +1,23 @@
 package com.clevervpn.app.ui.common
 
-import com.clevervpn.kit.common.VpnState
+import com.clevervpn.kit.common.Status
 
-fun VpnState.switchEnabled(): Boolean {
-    return when (this) {
-        is VpnState.Up,
-        VpnState.Down -> true
-        else -> false
-    }
+fun Status.isStarted(): Boolean {
+    return this == Status.Started
 }
 
-fun VpnState.switchChecked(): Boolean {
-    return when (this) {
-        is VpnState.Up -> true
-        VpnState.Reconnecting -> true
-        else -> false
-    }
+fun Status.isTransitioning(): Boolean {
+    return this == Status.Starting || this == Status.Stopping
+}
+
+fun Status.isStopped(): Boolean {
+    return this == Status.Stopped
+}
+
+fun Status.switchEnabled(): Boolean {
+    return isStopped() || isStarted()
+}
+
+fun Status.switchChecked(): Boolean {
+    return this == Status.Starting || this == Status.Started
 }

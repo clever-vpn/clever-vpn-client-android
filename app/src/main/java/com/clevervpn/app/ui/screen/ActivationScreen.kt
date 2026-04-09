@@ -74,7 +74,7 @@ fun ActivationScreen(
     onSubmit: (key: String) -> Unit,
 ) {
     when(state) {
-        ActivationState.ACTIVATED, ActivationState.LOCAL_CHECK ->
+        ActivationState.ACTIVATED ->
             Brand()
         else -> {
             Column(
@@ -102,10 +102,10 @@ fun SignInHeader() {
     ) {
         Logo()
         Spacer(modifier = Modifier.height(5.dp))
-        Text(text = "Clever Vpn", fontSize = 40.sp, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(R.string.app_name), fontSize = 40.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            text = "Fast Modern VPN",
+            text = stringResource(R.string.tagline_fast_modern_vpn),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Light
         )
@@ -137,6 +137,8 @@ fun SignInCard(
 ) {
     var key by remember { mutableStateOf("") }
     var scanCode by remember { mutableStateOf(false) }
+    val scanNowText = stringResource(R.string.scan_qr_code_now)
+    val noCameraPermissionText = stringResource(R.string.no_camera_permission)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -167,7 +169,7 @@ fun SignInCard(
                 }) {
                     Icon(
                         imageVector = Icons.Default.QrCode,
-                        contentDescription = "扫描二维码"
+                        contentDescription = stringResource(R.string.scan_qr_code)
                     )
                 }
             }
@@ -213,9 +215,9 @@ fun SignInCard(
             permission = Manifest.permission.CAMERA,
             onResult = { isGranted ->
                 statusText = if (isGranted) {
-                    "Scan QR code now!"
+                    scanNowText
                 } else {
-                    "No camera permission!"
+                    noCameraPermissionText
                 }
             },
         )
@@ -257,7 +259,7 @@ fun PrivacyPolicySheet(
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = "Agree to associate device data to your account! ",
+            text = stringResource(R.string.privacy_sheet_agree),
             modifier = Modifier
                 .padding(start = 5.dp)
                 .clickable { showBottomSheet = true },
@@ -285,17 +287,7 @@ fun PrivacyPolicySheet(
 
             ) {
                 Text(
-                    """
-For the app to work with the Clever VPN service and in-app purchases, the following device data is associated with your account:
-
-- Unique random device ID
-- Device name or hostname
-- OS version and type
-- CPU architecture
-- Activation Key
-
-**Clever VPN values your privacy**. You can sign out from the device and delete your data by deactivating at any time.
-""",
+                    text = stringResource(R.string.privacy_sheet_details),
                     modifier = Modifier.padding(16.dp)
                 )
             }

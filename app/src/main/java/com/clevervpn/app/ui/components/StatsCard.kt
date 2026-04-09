@@ -16,11 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,9 +25,6 @@ import androidx.compose.ui.unit.dp
 import com.clevervpn.app.R
 import com.clevervpn.app.utils.prettyBytes
 import com.clevervpn.kit.common.Traffic
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 
 @Composable
 fun Stats(value: String, title: String, isDownload: Boolean = false) {
@@ -55,26 +47,15 @@ fun Stats(value: String, title: String, isDownload: Boolean = false) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsCard(getTraffic: suspend () -> Traffic?) {
-    var traffic by remember { mutableStateOf<Traffic?>(null) }
-
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            while(true) {
-                traffic = getTraffic()
-                delay(1000)
-            }
-        }
-    }
-
+fun StatsCard(traffic: Traffic?) {
     Row(verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly,
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        Stats(prettyBytes((traffic?.rx ?: 0L).toULong()), stringResource(R.string.downloaded), isDownload = true)
+        Stats(prettyBytes((traffic?.rxTotal ?: 0L).toULong()), stringResource(R.string.downloaded), isDownload = true)
         VerticalDivider(modifier = Modifier.padding(vertical = 15.dp))
-        Stats(prettyBytes((traffic?.tx ?: 0L).toULong()), stringResource(R.string.uploaded))
+        Stats(prettyBytes((traffic?.txTotal ?: 0L).toULong()), stringResource(R.string.uploaded))
     }
 
 
@@ -91,7 +72,7 @@ fun PreviewStats() {
 @Composable
 fun PreviewStatsCard() {
 
-    StatsCard { Traffic(1223, 1223)}
+    StatsCard(Traffic(1223, 1223, 12_223, 22_223, true))
 }
 
 //@Preview
