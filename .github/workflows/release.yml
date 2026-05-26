@@ -239,7 +239,25 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/CleverVPN-${RELEASE_TAG}.apk"
+          found_apk=false
+          for apk_path in app/build/outputs/apk/release/*.apk; do
+            if [[ ! -f "$apk_path" ]]; then
+              continue
+            fi
+
+            found_apk=true
+            apk_name="$(basename "$apk_path" .apk)"
+            abi="${apk_name#app-}"
+            abi="${abi%-unsigned}"
+            abi="${abi%-release}"
+            cp "$apk_path" "dist/CleverVPN-${RELEASE_TAG}-${abi}.apk"
+          done
+
+          if [[ "$found_apk" != true ]]; then
+            echo "No split release APKs were produced." >&2
+            exit 1
+          fi
+
           cp app/build/outputs/bundle/release/app-release.aab "dist/CleverVPN-${RELEASE_TAG}.aab"
 
       - name: Upload release artifacts

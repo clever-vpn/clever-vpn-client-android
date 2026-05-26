@@ -28,7 +28,7 @@ If a requested version tag does not exist, the workflow should use the current `
 
 To avoid creating a dirty tag, a new tag must not be written during prepare steps. The workflow should build artifacts first against the resolved target commit, then create the missing tag only in the final publish stage immediately before creating or updating the GitHub Release. If a newly created tag cannot be paired with a successful release write, the workflow should clean up that tag before the job exits with failure.
 
-Google Play publishing and GitHub Release asset publishing are separate outputs of the same manual release flow. The workflow only uploads to Google Play testing tracks (`internal`, `closed`, or `open`). Production rollout must be promoted manually in Play Console after validation. Secrets and signing material are loaded from Bitwarden-managed credentials exposed through GitHub Actions secrets and repository variables.
+Google Play publishing and GitHub Release asset publishing are separate outputs of the same manual release flow. The workflow only uploads to Google Play testing tracks (`internal`, `closed`, or `open`). Production rollout must be promoted manually in Play Console after validation. GitHub Releases publish ABI-specific APK assets for `arm64-v8a` and `armeabi-v7a`, while Google Play continues to receive the AAB. Secrets and signing material are loaded from Bitwarden-managed credentials exposed through GitHub Actions secrets and repository variables.
 
 ## License
 This project is open-source. See the LICENSE file for details.
