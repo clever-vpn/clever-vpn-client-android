@@ -19,5 +19,16 @@ This project depends on the `clever-vpn-android-kit` Maven package. The kit hand
 2. Ensure your project includes the `clever-vpn-android-kit` dependency in your build configuration.
 3. Build and run the app using Android Studio.
 
+## Release Policy
+Android releases are published manually through GitHub Actions and use `v`-prefixed semantic version tags such as `v1.3.2`.
+
+The release tag is treated as immutable. If a requested version tag already exists, the workflow must build from the commit currently pointed to by that tag and may update the corresponding GitHub Release metadata or assets, but it must not move the tag to a different commit.
+
+If a requested version tag does not exist, the workflow should use the current `main` HEAD as the target commit for the release. If no version is provided, the workflow should read the latest GitHub Release tag, increment the patch version, and use the resulting `v`-prefixed tag for the new release.
+
+To avoid creating a dirty tag, a new tag must not be written during prepare steps. The workflow should build artifacts first against the resolved target commit, then create the missing tag only in the final publish stage immediately before creating or updating the GitHub Release. If a newly created tag cannot be paired with a successful release write, the workflow should clean up that tag before the job exits with failure.
+
+Google Play publishing and GitHub Release asset publishing are separate outputs of the same manual release flow. Secrets and signing material are loaded from Bitwarden-managed credentials exposed through GitHub Actions secrets and repository variables.
+
 ## License
 This project is open-source. See the LICENSE file for details.

@@ -312,6 +312,7 @@ jobs:
     if: ${{ always() && needs.prepare.result == 'success' && (needs.build_release_artifacts.result == 'success' || needs.build_release_artifacts.result == 'skipped') }}
     steps:
       - name: Create tag when missing
+        id: create_tag
         if: ${{ needs.prepare.outputs.tag_exists != 'true' }}
         shell: bash
         env:
@@ -323,6 +324,7 @@ jobs:
           gh api repos/${{ github.repository }}/git/refs \
             -f ref="refs/tags/${RELEASE_TAG}" \
             -f sha="${TARGET_SHA}" >/dev/null
+          echo "created=true" >> "$GITHUB_OUTPUT"
 
       - name: Download release artifacts
         if: ${{ inputs.publish_release_assets && needs.build_release_artifacts.result == 'success' }}
@@ -353,7 +355,9 @@ jobs:
           EOF
 
       - name: Create or update GitHub release with artifacts
+        id: publish_release_with_artifacts
         if: ${{ inputs.publish_release_assets && needs.build_release_artifacts.result == 'success' }}
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.release_tag }}
@@ -367,7 +371,9 @@ jobs:
             dist/*.aab
 
       - name: Create or update GitHub release metadata
+        id: publish_release_metadata
         if: ${{ !inputs.publish_release_assets || needs.build_release_artifacts.result != 'success' }}
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.release_tag }}
@@ -376,3 +382,21 @@ jobs:
           body_path: release-notes.md
           prerelease: ${{ needs.prepare.outputs.is_rc == 'true' }}
           make_latest: ${{ needs.prepare.outputs.is_rc != 'true' }}
+
+      - name: Clean up newly created tag on release failure
+        if: ${{ always() && steps.create_tag.outputs.created == 'true' && (steps.publish_release_with_artifacts.outcome == 'failure' || steps.publish_release_metadata.outcome == 'failure') }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          gh api --method DELETE repos/${{ github.repository }}/git/refs/tags/${RELEASE_TAG}
+
+      - name: Fail when GitHub release publication fails
+        if: ${{ always() && (steps.publish_release_with_artifacts.outcome == 'failure' || steps.publish_release_metadata.outcome == 'failure') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "GitHub release publication failed." >&2
+          exit 1
