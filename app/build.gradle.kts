@@ -1,6 +1,16 @@
 
 val pkg: String = providers.gradleProperty("clevervpnPackageName").get()
 val ns: String = providers.gradleProperty("clevervpnSpacename").get()
+val androidReleaseStoreFile: String? = providers.gradleProperty("androidReleaseStoreFile").orNull
+val androidReleaseStorePassword: String? = providers.gradleProperty("androidReleaseStorePassword").orNull
+val androidReleaseKeyAlias: String? = providers.gradleProperty("androidReleaseKeyAlias").orNull
+val androidReleaseKeyPassword: String? = providers.gradleProperty("androidReleaseKeyPassword").orNull
+val hasAndroidReleaseSigning: Boolean = listOf(
+    androidReleaseStoreFile,
+    androidReleaseStorePassword,
+    androidReleaseKeyAlias,
+    androidReleaseKeyPassword,
+).all { !it.isNullOrBlank() }
 
 plugins {
     alias(libs.plugins.android.application)
@@ -11,6 +21,17 @@ plugins {
 android {
     namespace = ns
     compileSdk = 35
+
+    signingConfigs {
+        if (hasAndroidReleaseSigning) {
+            create("release") {
+                storeFile = file(androidReleaseStoreFile!!)
+                storePassword = androidReleaseStorePassword
+                keyAlias = androidReleaseKeyAlias
+                keyPassword = androidReleaseKeyPassword
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = pkg
@@ -25,6 +46,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            val releaseSigning = signingConfigs.findByName("release")
+            if (releaseSigning != null) {
+                signingConfig = releaseSigning
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
