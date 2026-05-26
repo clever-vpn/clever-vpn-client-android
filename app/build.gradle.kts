@@ -22,6 +22,15 @@ android {
     namespace = ns
     compileSdk = 35
 
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
+        }
+    }
+
     signingConfigs {
         if (hasAndroidReleaseSigning) {
             create("release") {
