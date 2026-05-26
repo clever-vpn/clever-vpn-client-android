@@ -14,10 +14,19 @@ on:
         default: true
         type: boolean
       publish_google_play:
-        description: Upload the signed Android App Bundle to the Google Play production track.
+        description: Upload the signed Android App Bundle to a Google Play testing track.
         required: true
         default: true
         type: boolean
+      google_play_track:
+        description: Google Play testing track to upload. Production rollout must be promoted manually in Play Console.
+        required: true
+        default: internal
+        type: choice
+        options:
+          - internal
+          - closed
+          - open
 
 permissions:
   contents: write
@@ -299,7 +308,7 @@ jobs:
           packageName: ${{ needs.prepare.outputs.package_name }}
           releaseFiles: dist/*.aab
           releaseName: ${{ needs.prepare.outputs.release_tag }}
-          tracks: production
+          tracks: ${{ inputs.google_play_track }}
           status: completed
 
   publish_release:
