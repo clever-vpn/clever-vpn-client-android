@@ -1,0 +1,402 @@
+name: Release Android App
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional version (for example 1.3.3, v1.3.3, 1.3.3-rc.1). Leave empty to auto bump patch from the latest release.
+        required: false
+        default: ''
+        type: string
+      publish_release_assets:
+        description: Build signed Android artifacts and attach them to the GitHub release.
+        required: true
+        default: true
+        type: boolean
+      publish_google_play:
+        description: Upload the signed Android App Bundle to the Google Play production track.
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.version.outputs.release_tag }}
+      raw_version: ${{ steps.version.outputs.raw_version }}
+      is_rc: ${{ steps.version.outputs.is_rc }}
+      target_sha: ${{ steps.target.outputs.target_sha }}
+      tag_exists: ${{ steps.target.outputs.tag_exists }}
+      version_code: ${{ steps.version_code.outputs.version_code }}
+      package_name: ${{ steps.package_name.outputs.package_name }}
+    steps:
+      - name: Enforce main branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "This workflow can only be dispatched from main. Current ref: ${GITHUB_REF}" >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize version input
+        id: version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          INPUT_VERSION="${{ inputs.version }}"
+          RAW="${INPUT_VERSION#v}"
+
+          if [[ -z "${RAW}" ]]; then
+            LATEST_TAG="$(gh api repos/${{ github.repository }}/releases/latest --jq '.tag_name' 2>/dev/null || echo 'v0.0.0')"
+            LATEST_RAW="${LATEST_TAG#v}"
+
+            if [[ "${LATEST_RAW}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR="${BASH_REMATCH[1]}"
+              MINOR="${BASH_REMATCH[2]}"
+              PATCH="${BASH_REMATCH[3]}"
+            elif [[ "${LATEST_RAW}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)-rc\.([0-9]+)$ ]]; then
+              MAJOR="${BASH_REMATCH[1]}"
+              MINOR="${BASH_REMATCH[2]}"
+              PATCH="${BASH_REMATCH[3]}"
+            else
+              echo "latest tag ${LATEST_TAG} is not a supported semver base" >&2
+              exit 1
+            fi
+
+            RAW="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+
+          if [[ "${RAW}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+            IS_RC="true"
+          elif [[ "${RAW}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            IS_RC="false"
+          else
+            echo "unsupported version format: ${RAW}" >&2
+            echo "supported: x.y.z or x.y.z-rc.n" >&2
+            exit 1
+          fi
+
+          echo "raw_version=${RAW}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=v${RAW}" >> "$GITHUB_OUTPUT"
+          echo "is_rc=${IS_RC}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve target commit
+        id: target
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+            echo "target_sha=$(git rev-list -n 1 "refs/tags/${RELEASE_TAG}")" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag_exists=false" >> "$GITHUB_OUTPUT"
+            echo "target_sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve package name
+        id: package_name
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACKAGE_NAME="$(sed -n 's/^clevervpnPackageName=//p' gradle.properties | head -1)"
+          if [[ -z "${PACKAGE_NAME}" ]]; then
+            echo "Failed to resolve clevervpnPackageName from gradle.properties" >&2
+            exit 1
+          fi
+          echo "package_name=${PACKAGE_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve version code
+        id: version_code
+        shell: bash
+        run: |
+          set -euo pipefail
+          CURRENT_VERSION_CODE="$(sed -n 's/^clevervpnVersionCode=//p' gradle.properties | head -1)"
+          if [[ ! "${CURRENT_VERSION_CODE}" =~ ^[0-9]+$ ]]; then
+            echo "Invalid clevervpnVersionCode in gradle.properties: ${CURRENT_VERSION_CODE}" >&2
+            exit 1
+          fi
+
+          VERSION_CODE=$((CURRENT_VERSION_CODE + GITHUB_RUN_NUMBER * 10 + GITHUB_RUN_ATTEMPT))
+          echo "Resolved version code: ${VERSION_CODE}"
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+
+  build_release_artifacts:
+    name: Build release artifacts
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: ${{ inputs.publish_release_assets || inputs.publish_google_play }}
+    steps:
+      - name: Checkout target commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare.outputs.target_sha }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate Bitwarden signing wiring
+        shell: bash
+        env:
+          BW_SM_ACCESS_TOKEN: ${{ secrets.BW_SM_ACCESS_TOKEN }}
+          BW_SECRET_ID_ANDROID_KEYSTORE_BASE64: ${{ vars.BW_SECRET_ID_ANDROID_KEYSTORE_BASE64 }}
+          BW_SECRET_ID_ANDROID_KEYSTORE_PASSWORD: ${{ vars.BW_SECRET_ID_ANDROID_KEYSTORE_PASSWORD }}
+          BW_SECRET_ID_ANDROID_KEY_ALIAS: ${{ vars.BW_SECRET_ID_ANDROID_KEY_ALIAS }}
+          BW_SECRET_ID_ANDROID_KEY_PASSWORD: ${{ vars.BW_SECRET_ID_ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          required_vars=(
+            BW_SM_ACCESS_TOKEN
+            BW_SECRET_ID_ANDROID_KEYSTORE_BASE64
+            BW_SECRET_ID_ANDROID_KEYSTORE_PASSWORD
+            BW_SECRET_ID_ANDROID_KEY_ALIAS
+            BW_SECRET_ID_ANDROID_KEY_PASSWORD
+          )
+
+          for required_var in "${required_vars[@]}"; do
+            if [[ -z "${!required_var:-}" ]]; then
+              echo "Missing required GitHub secret/variable: ${required_var}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Load Android signing secrets from Bitwarden
+        uses: bitwarden/sm-action@v3.0.0
+        with:
+          access_token: ${{ secrets.BW_SM_ACCESS_TOKEN }}
+          cloud_region: ${{ vars.BW_CLOUD_REGION || 'us' }}
+          secrets: |
+            ${{ vars.BW_SECRET_ID_ANDROID_KEYSTORE_BASE64 }} > ANDROID_KEYSTORE_BASE64
+            ${{ vars.BW_SECRET_ID_ANDROID_KEYSTORE_PASSWORD }} > ANDROID_KEYSTORE_PASSWORD
+            ${{ vars.BW_SECRET_ID_ANDROID_KEY_ALIAS }} > ANDROID_KEY_ALIAS
+            ${{ vars.BW_SECRET_ID_ANDROID_KEY_PASSWORD }} > ANDROID_KEY_PASSWORD
+
+      - name: Prepare signing material
+        id: signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ env.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="$RUNNER_TEMP/android-release.keystore"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          echo "keystore_path=$KEYSTORE_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Build signed release APK and AAB
+        shell: bash
+        env:
+          ORG_GRADLE_PROJECT_clevervpnVersionName: ${{ needs.prepare.outputs.raw_version }}
+          ORG_GRADLE_PROJECT_clevervpnVersionCode: ${{ needs.prepare.outputs.version_code }}
+          ORG_GRADLE_PROJECT_androidReleaseStoreFile: ${{ steps.signing.outputs.keystore_path }}
+          ORG_GRADLE_PROJECT_androidReleaseStorePassword: ${{ env.ANDROID_KEYSTORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_androidReleaseKeyAlias: ${{ env.ANDROID_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_androidReleaseKeyPassword: ${{ env.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:assembleRelease :app:bundleRelease
+
+      - name: Collect release artifacts
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/CleverVPN-${RELEASE_TAG}.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/CleverVPN-${RELEASE_TAG}.aab"
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-artifacts
+          path: dist/*
+          retention-days: 7
+
+  publish_google_play:
+    name: Publish to Google Play
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+      - build_release_artifacts
+    if: ${{ inputs.publish_google_play }}
+    steps:
+      - name: Validate Bitwarden Google Play wiring
+        shell: bash
+        env:
+          BW_SM_ACCESS_TOKEN: ${{ secrets.BW_SM_ACCESS_TOKEN }}
+          BW_SECRET_ID_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64: ${{ vars.BW_SECRET_ID_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          required_vars=(
+            BW_SM_ACCESS_TOKEN
+            BW_SECRET_ID_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64
+          )
+
+          for required_var in "${required_vars[@]}"; do
+            if [[ -z "${!required_var:-}" ]]; then
+              echo "Missing required GitHub secret/variable: ${required_var}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Load Google Play service account from Bitwarden
+        uses: bitwarden/sm-action@v3.0.0
+        with:
+          access_token: ${{ secrets.BW_SM_ACCESS_TOKEN }}
+          cloud_region: ${{ vars.BW_CLOUD_REGION || 'us' }}
+          secrets: |
+            ${{ vars.BW_SECRET_ID_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }} > GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64
+
+      - name: Decode Google Play service account
+        id: play_auth
+        shell: bash
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          GOOGLE_PLAY_JSON_PATH="$RUNNER_TEMP/google-play-service-account.json"
+          printf '%s' "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64" | base64 --decode > "$GOOGLE_PLAY_JSON_PATH"
+          echo "service_account_json_path=$GOOGLE_PLAY_JSON_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-artifacts
+          path: dist
+
+      - name: Upload Android App Bundle to Google Play
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJson: ${{ steps.play_auth.outputs.service_account_json_path }}
+          packageName: ${{ needs.prepare.outputs.package_name }}
+          releaseFiles: dist/*.aab
+          releaseName: ${{ needs.prepare.outputs.release_tag }}
+          tracks: production
+          status: completed
+
+  publish_release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+      - build_release_artifacts
+      - publish_google_play
+    if: ${{ always() && needs.prepare.result == 'success' && (needs.build_release_artifacts.result == 'success' || needs.build_release_artifacts.result == 'skipped') }}
+    steps:
+      - name: Create tag when missing
+        id: create_tag
+        if: ${{ needs.prepare.outputs.tag_exists != 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+          TARGET_SHA: ${{ needs.prepare.outputs.target_sha }}
+        run: |
+          set -euo pipefail
+          gh api repos/${{ github.repository }}/git/refs \
+            -f ref="refs/tags/${RELEASE_TAG}" \
+            -f sha="${TARGET_SHA}" >/dev/null
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Download release artifacts
+        if: ${{ inputs.publish_release_assets && needs.build_release_artifacts.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-artifacts
+          path: dist
+
+      - name: Build release notes
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+          RAW_VERSION: ${{ needs.prepare.outputs.raw_version }}
+          VERSION_CODE: ${{ needs.prepare.outputs.version_code }}
+          TAG_EXISTS: ${{ needs.prepare.outputs.tag_exists }}
+          ARTIFACT_RESULT: ${{ needs.build_release_artifacts.result }}
+          GOOGLE_PLAY_RESULT: ${{ needs.publish_google_play.result }}
+        run: |
+          set -euo pipefail
+          cat > release-notes.md <<EOF
+          Release ${RELEASE_TAG}
+
+          Version: ${RAW_VERSION}
+          Version code: ${VERSION_CODE}
+          Existing tag reused: ${TAG_EXISTS}
+          GitHub release artifacts: ${ARTIFACT_RESULT}
+          Google Play upload: ${GOOGLE_PLAY_RESULT}
+          EOF
+
+      - name: Create or update GitHub release with artifacts
+        id: publish_release_with_artifacts
+        if: ${{ inputs.publish_release_assets && needs.build_release_artifacts.result == 'success' }}
+        continue-on-error: true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.release_tag }}
+          target_commitish: ${{ needs.prepare.outputs.target_sha }}
+          name: Release ${{ needs.prepare.outputs.release_tag }}
+          body_path: release-notes.md
+          prerelease: ${{ needs.prepare.outputs.is_rc == 'true' }}
+          make_latest: ${{ needs.prepare.outputs.is_rc != 'true' }}
+          files: |
+            dist/*.apk
+            dist/*.aab
+
+      - name: Create or update GitHub release metadata
+        id: publish_release_metadata
+        if: ${{ !inputs.publish_release_assets || needs.build_release_artifacts.result != 'success' }}
+        continue-on-error: true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.release_tag }}
+          target_commitish: ${{ needs.prepare.outputs.target_sha }}
+          name: Release ${{ needs.prepare.outputs.release_tag }}
+          body_path: release-notes.md
+          prerelease: ${{ needs.prepare.outputs.is_rc == 'true' }}
+          make_latest: ${{ needs.prepare.outputs.is_rc != 'true' }}
+
+      - name: Clean up newly created tag on release failure
+        if: ${{ always() && steps.create_tag.outputs.created == 'true' && (steps.publish_release_with_artifacts.outcome == 'failure' || steps.publish_release_metadata.outcome == 'failure') }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          gh api --method DELETE repos/${{ github.repository }}/git/refs/tags/${RELEASE_TAG}
+
+      - name: Fail when GitHub release publication fails
+        if: ${{ always() && (steps.publish_release_with_artifacts.outcome == 'failure' || steps.publish_release_metadata.outcome == 'failure') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "GitHub release publication failed." >&2
+          exit 1
