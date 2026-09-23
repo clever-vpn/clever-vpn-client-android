@@ -20,7 +20,7 @@ plugins {
 
 android {
     namespace = ns
-    compileSdk = 35
+    compileSdk = 36
 
     splits {
         abi {
@@ -45,7 +45,7 @@ android {
     defaultConfig {
         applicationId = pkg
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = providers.gradleProperty("clevervpnVersionCode").get().toInt()
         versionName = providers.gradleProperty("clevervpnVersionName").get()
 
