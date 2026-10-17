@@ -94,8 +94,6 @@
     <string name="upstream_enabled">已启用上游</string>
     <string name="split_region_current">地区代码</string>
     <string name="split_region_search">搜索地区</string>
-    <string name="split_region_custom_label">自定义代码（如 us）</string>
-    <string name="split_region_custom_apply">使用</string>
     <string name="split_region_group_asia">亚洲</string>
     <string name="split_region_group_americas">美洲</string>
     <string name="split_region_group_europe">欧洲</string>

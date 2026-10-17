@@ -93,8 +93,6 @@
     <string name="upstream_enabled">Upstream enabled</string>
     <string name="split_region_current">Region code</string>
     <string name="split_region_search">Search region</string>
-    <string name="split_region_custom_label">Custom code (e.g. us)</string>
-    <string name="split_region_custom_apply">Use</string>
     <string name="split_region_group_asia">Asia</string>
     <string name="split_region_group_americas">Americas</string>
     <string name="split_region_group_europe">Europe</string>
