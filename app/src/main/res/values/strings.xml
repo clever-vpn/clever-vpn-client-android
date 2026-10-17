@@ -27,8 +27,6 @@
     <string name="split_rules">Split Rules</string>
     <string name="split_settings_title">Split Settings</string>
     <string name="split_region">Region</string>
-    <string name="split_current_code">Current Code: %1$s</string>
-    <string name="refresh_region_code">Refresh region code</string>
     <string name="split_ip">IP</string>
     <string name="split_ip_label">IP/CIDR (one per line)</string>
     <string name="split_ip_placeholder">e.g. 192.168.1.0/24</string>
@@ -93,4 +91,13 @@
     <string name="upstream">Upstream</string>
     <string name="relay_enabled">Relay enabled</string>
     <string name="upstream_enabled">Upstream enabled</string>
+    <string name="split_region_current">Region code</string>
+    <string name="split_region_search">Search region</string>
+    <string name="split_region_custom_label">Custom code (e.g. us)</string>
+    <string name="split_region_custom_apply">Use</string>
+    <string name="split_region_group_asia">Asia</string>
+    <string name="split_region_group_americas">Americas</string>
+    <string name="split_region_group_europe">Europe</string>
+    <string name="split_region_group_oceania">Oceania</string>
+    <string name="split_region_group_custom">Custom</string>
 </resources>

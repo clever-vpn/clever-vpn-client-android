@@ -28,8 +28,6 @@
     <string name="split_rules">分流规则</string>
     <string name="split_settings_title">分流设置</string>
     <string name="split_region">区域</string>
-    <string name="split_current_code">当前区域码：%1$s</string>
-    <string name="refresh_region_code">刷新区域码</string>
     <string name="split_ip">IP</string>
     <string name="split_ip_label">IP/CIDR（每行一个）</string>
     <string name="split_ip_placeholder">例如：192.168.1.0/24</string>
@@ -94,4 +92,13 @@
     <string name="upstream">上游</string>
     <string name="relay_enabled">已启用中继</string>
     <string name="upstream_enabled">已启用上游</string>
+    <string name="split_region_current">地区代码</string>
+    <string name="split_region_search">搜索地区</string>
+    <string name="split_region_custom_label">自定义代码（如 us）</string>
+    <string name="split_region_custom_apply">使用</string>
+    <string name="split_region_group_asia">亚洲</string>
+    <string name="split_region_group_americas">美洲</string>
+    <string name="split_region_group_europe">欧洲</string>
+    <string name="split_region_group_oceania">大洋洲</string>
+    <string name="split_region_group_custom">自定义</string>
 </resources>

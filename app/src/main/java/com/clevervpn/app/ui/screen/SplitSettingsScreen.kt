@@ -1,5 +1,6 @@
 package com.clevervpn.app.ui.screen
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,16 +13,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -39,16 +41,22 @@ import com.clevervpn.kit.common.DomainRule
 import com.clevervpn.kit.common.IpRule
 import com.clevervpn.kit.common.Region
 import com.clevervpn.kit.common.Split
+import com.clevervpn.kit.common.SplitRegionOptions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SplitSettingsScreen(
     splitInfo: Split,
     onSave: (Split) -> Unit,
-    onRefreshRegionCode: () -> Unit,
     onBack: () -> Unit,
 ) {
     var regionEnabled by remember(splitInfo.region.enable) { mutableStateOf(splitInfo.region.enable) }
+    // region 代码**永远不为空**：落盘值空/非法 ⇒ 用缺省（cn）。
+    var regionCode by remember(splitInfo.region.code) {
+        mutableStateOf(SplitRegionOptions.normalize(splitInfo.region.code) ?: SplitRegionOptions.DEFAULT_CODE)
+    }
+    var regionCustomCode by remember { mutableStateOf("") }
+    var showRegionList by remember { mutableStateOf(false) }
     var ipEnabled by remember(splitInfo.ip.enable) { mutableStateOf(splitInfo.ip.enable) }
     var domainEnabled by remember(splitInfo.domain.enable) { mutableStateOf(splitInfo.domain.enable) }
 
@@ -76,7 +84,7 @@ fun SplitSettingsScreen(
         newValue = Split(
             region = Region(
                 enable = regionEnabled,
-                code = splitInfo.region.code,
+                code = regionCode,
             ),
             ip = IpRule(
                 enable = ipEnabled,
@@ -98,6 +106,19 @@ fun SplitSettingsScreen(
         onDispose {
             onSave(latestSplit.value)
         }
+    }
+
+    if (showRegionList) {
+        // 二级列表（仿系统「设置 → 语言」）：可滚动、按大洲分组、点选即生效并返回。
+        RegionSelectionScreen(
+            selectedCode = regionCode,
+            onSelect = { code ->
+                regionCode = code
+                showRegionList = false
+            },
+            onBack = { showRegionList = false },
+        )
+        return
     }
 
     Scaffold(
@@ -127,24 +148,54 @@ fun SplitSettingsScreen(
             SplitSectionCard(
                 title = stringResource(R.string.split_region),
                 enabled = regionEnabled,
-                onEnabledChange = { regionEnabled = it },
+                onEnabledChange = { enabled ->
+                    regionEnabled = enabled
+                    // 开启时地区必须有一个值：没有就落缺省（cn）；已有值保留用户的。
+                    if (enabled) {
+                        regionCode = SplitRegionOptions.normalize(regionCode)
+                            ?: SplitRegionOptions.DEFAULT_CODE
+                    }
+                },
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.split_current_code,
-                            displayValue(splitInfo.region.code, stringResource(R.string.none_text))
+                // 选择控件只在开启时才显示（关闭时"选地区"没有意义；值仍保留在 userInfo 里）。
+                if (regionEnabled) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showRegionList = true },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(text = stringResource(R.string.split_region_current))
+                        Text(
+                            text = SplitRegionOptions.label(regionCode),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    )
-                    IconButton(onClick = onRefreshRegionCode) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = stringResource(R.string.refresh_region_code),
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedTextField(
+                            value = regionCustomCode,
+                            onValueChange = { regionCustomCode = it },
+                            label = { Text(stringResource(R.string.split_region_custom_label)) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
                         )
+                        TextButton(
+                            onClick = {
+                                SplitRegionOptions.normalize(regionCustomCode)?.let { code ->
+                                    regionCode = code
+                                }
+                                regionCustomCode = ""
+                            },
+                            enabled = SplitRegionOptions.normalize(regionCustomCode) != null,
+                        ) {
+                            Text(text = stringResource(R.string.split_region_custom_apply))
+                        }
                     }
                 }
             }
@@ -248,8 +299,4 @@ private fun splitLines(input: String): List<String> {
         .map { it.trim() }
         .filter { it.isNotEmpty() }
         .toList()
-}
-
-private fun displayValue(value: String, noneText: String): String {
-    return if (value.isBlank()) noneText else value
 }
