@@ -55,7 +55,6 @@ fun SplitSettingsScreen(
     var regionCode by remember(splitInfo.region.code) {
         mutableStateOf(SplitRegionOptions.normalize(splitInfo.region.code) ?: SplitRegionOptions.DEFAULT_CODE)
     }
-    var regionCustomCode by remember { mutableStateOf("") }
     var showRegionList by remember { mutableStateOf(false) }
     var ipEnabled by remember(splitInfo.ip.enable) { mutableStateOf(splitInfo.ip.enable) }
     var domainEnabled by remember(splitInfo.domain.enable) { mutableStateOf(splitInfo.domain.enable) }
@@ -173,30 +172,6 @@ fun SplitSettingsScreen(
                         )
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        OutlinedTextField(
-                            value = regionCustomCode,
-                            onValueChange = { regionCustomCode = it },
-                            label = { Text(stringResource(R.string.split_region_custom_label)) },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                        )
-                        TextButton(
-                            onClick = {
-                                SplitRegionOptions.normalize(regionCustomCode)?.let { code ->
-                                    regionCode = code
-                                }
-                                regionCustomCode = ""
-                            },
-                            enabled = SplitRegionOptions.normalize(regionCustomCode) != null,
-                        ) {
-                            Text(text = stringResource(R.string.split_region_custom_apply))
-                        }
-                    }
                 }
             }
 
