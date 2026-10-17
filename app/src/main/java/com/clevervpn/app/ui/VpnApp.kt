@@ -128,7 +128,6 @@ fun VpnApp(
             SplitSettingsScreen(
                 splitInfo = splitInfo,
                 onSave = { vm.updateSplitInfo(it) },
-                onRefreshRegionCode = vm::updateRegionCode,
                 onBack = { navController.navigateUp() },
             )
         }

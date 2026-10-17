@@ -143,14 +143,6 @@ class VpnViewModel: ViewModel() {
         }
     }
 
-    fun updateRegionCode() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                VpnClient.instance.updateRegionCode()
-            }
-        }
-    }
-
     fun activate(key: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
